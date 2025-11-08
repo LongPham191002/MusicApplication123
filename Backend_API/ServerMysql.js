@@ -1,59 +1,19 @@
 var express = require('express');
 var bodyParser = require("body-parser");
-var mysql = require('mysql2');
 const cors = require('cors');
+
+
+
 var app = express();
 app.use(cors());
 app.use(express.static('public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }))
-
-// json sample
-const books = JSON.stringify([
-  { title: "The Alchemist", author: "Paulo Coelho", year: 1988 },
-  { title: "The Prophet", author: "Kahlil Gibran", year: 1923 }
-]);
+ 
+const usersRoutes = require('./routes/users');
+app.use('/users', usersRoutes);
 
 
-// step 1: rong workbench mở cửa sổ sql và chạy lệnh
-//ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-//step 2: 
-var con = mysql.createConnection({
-  host: "localhost",
-  port: "3306",
-  user: "root",
-  password: "quocviet",
-  insecureAuth: true,
-  database: "demo"
-});
-//step 1
-con.connect(function (err)
-{
-  if (err) throw err;
-  console.log("Connected!!!")
-  var sql = "SELECT * FROM course";
-  con.query(sql, function (err, results)
-  {
-    if (err) throw err;
-    console.log(results);
-  })
-
-});
-//RESTFull API
-// app.get('/getAllBooks', function (req, res)
-// {
-//   res.send(books);
-// })
-app.get('/course/getAll', function (req, res)
-{
-  var sql = "SELECT * FROM course";
-  con.query(sql, function (err, results)
-  {
-    if (err) throw err;
-    res.send(results);
-  });
-
-})
 var server = app.listen(5555, function ()
 {
   var host = server.address().address
@@ -61,3 +21,5 @@ var server = app.listen(5555, function ()
 
   console.log("Example app listening at http://%s:%s", host, port)
 })
+
+
