@@ -16,6 +16,8 @@ app.use('/users', usersRouter);
 
 const artistsRouter = require('./routes/artists');
 app.use('/artists', artistsRouter);
+const albumsRouter = require('./routes/albums');
+app.use('/albums', albumsRouter);
 
 
 
