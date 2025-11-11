@@ -85,4 +85,4 @@ exports.deleteAlbum = (req, res) => {
         return res.status(404).json({ error: "Album not found" });
     res.json({ message: "Album deleted successfully" });
   });
-};
+};  
