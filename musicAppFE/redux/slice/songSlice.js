@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { API_BASE_URL } from "../../config/apiConfig";
 
 const initialState = {
     list: [],
@@ -11,7 +12,7 @@ export const fetchSongs = createAsyncThunk(
     "songs/fetch",
     async () => {
         try {
-            const res = await fetch("http://10.102.71.80:8386/api/songs");
+            const res = await fetch(`${API_BASE_URL}/api/songs`);
             if (!res.ok) {
                 throw new Error(`Fetch songs failed: ${res.status}`);
             }

@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 
 import { auth } from "../../firebaseConfig";
+import { API_BASE_URL } from "../../config/apiConfig";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -111,7 +112,7 @@ const RegisterScreen = ({ onNavigateToLogin, onRegisterSuccess }) => {
       const idToken = await user.getIdToken(true);
 
       // 4) Gửi qua backend để lưu Firestore
-      const response = await fetch("http://10.102.71.80:8386/api/users", {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
