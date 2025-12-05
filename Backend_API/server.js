@@ -2,9 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
-// Import Firebase config (đã được init trong config/firebase.js)
-require("./config/firebase");
-
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());

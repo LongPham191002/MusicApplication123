@@ -1,25 +1,49 @@
-const { db } = require("../config/firebase");
+const supabase = require("../config/supabase");
 
 exports.getAll = async (req, res) => {
   try {
-    const snap = await db.collection("comments").get();
-    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+    const { data, error } = await supabase
+      .from("comments")
+      .select("*");
+    
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) {
+    console.error("Error fetching comments:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };
 
 exports.create = async (req, res) => {
   try {
-    const doc = await db.collection("comments").add({
-      ...req.body,
-      createdAt: new Date().toISOString()
-    });
-    res.json({ id: doc.id });
-  } catch (e) { res.status(500).json({ message: "Create failed" }) }
+    const { data, error } = await supabase
+      .from("comments")
+      .insert({
+        ...req.body,
+        createdAt: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json({ id: data.id, ...data });
+  } catch (e) {
+    console.error("Error creating comment:", e);
+    res.status(500).json({ message: "Create failed", error: e.message });
+  }
 };
 
 exports.delete = async (req, res) => {
   try {
-    await db.collection("comments").doc(req.params.id).delete();
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", req.params.id);
+    
+    if (error) throw error;
     res.json({ message: "Deleted" });
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+  } catch (e) {
+    console.error("Error deleting comment:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };

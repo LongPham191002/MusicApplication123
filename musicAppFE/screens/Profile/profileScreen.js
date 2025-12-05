@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,22 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { auth } from "../../firebaseConfig";
+import supabase from "../../supabaseClient";
 
 const ProfileScreen = () => {
-  const user = auth.currentUser;
+  const [displayName, setDisplayName] = useState("Người dùng");
+  const [email, setEmail] = useState("Chưa cập nhật");
 
-  const displayName = user?.displayName || "Người dùng";
-  const email = user?.email || "Chưa cập nhật";
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setDisplayName(user.user_metadata?.display_name || user.email?.split("@")[0] || "Người dùng");
+        setEmail(user.email || "Chưa cập nhật");
+      }
+    };
+    getUser();
+  }, []);
 
   return (
     <View style={styles.container}>
