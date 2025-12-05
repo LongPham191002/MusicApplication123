@@ -2,19 +2,23 @@
 // USERS CONTROLLER MERGED
 // =========================
 
-// Firestore DB
-const { db } = require("../config/firebase");
+// Supabase DB
+const supabase = require("../config/supabase");
 
 // =========================
 // GET ALL USERS
 // =========================
 exports.getAll = async (req, res) => {
   try {
-    const snap = await db.collection("users").get();
-    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(data);
+    const { data, error } = await supabase
+      .from("users")
+      .select("*");
+    
+    if (error) throw error;
+    res.json(data || []);
   } catch (e) {
-    res.status(500).json({ message: "Error" });
+    console.error("Error fetching users:", e);
+    res.status(500).json({ message: "Error", error: e.message });
   }
 };
 
@@ -23,10 +27,17 @@ exports.getAll = async (req, res) => {
 // =========================
 exports.getById = async (req, res) => {
   try {
-    const doc = await db.collection("users").doc(req.params.id).get();
-    res.json({ id: doc.id, ...doc.data() });
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
   } catch (e) {
-    res.status(500).json({ message: "Error" });
+    console.error("Error fetching user:", e);
+    res.status(500).json({ message: "Error", error: e.message });
   }
 };
 
@@ -35,11 +46,11 @@ exports.getById = async (req, res) => {
 // =========================
 exports.create = async (req, res) => {
   try {
-    const tokenUser = req.user; // Firebase token đã verify  
+    const tokenUser = req.user; // Supabase token đã verify  
     const body = req.body;
 
     // ❗ KIỂM TRA BẢO MẬT:
-    // userId từ client phải KHỚP với uid trong Firebase Token
+    // userId từ client phải KHỚP với uid trong Supabase Token
     if (!tokenUser || tokenUser.uid !== body.userId) {
       return res.status(403).json({ message: "Không hợp lệ: userId mismatch" });
     }
@@ -47,17 +58,23 @@ exports.create = async (req, res) => {
     // Nếu client không gửi createdAt → tự thêm
     body.createdAt = body.createdAt || new Date().toISOString();
 
-    // Lưu Firestore
-    const doc = await db.collection("users").add(body);
+    // Lưu vào Supabase
+    const { data, error } = await supabase
+      .from("users")
+      .insert(body)
+      .select()
+      .single();
+
+    if (error) throw error;
 
     res.json({
-      id: doc.id,
-      ...body,
+      id: data.id,
+      ...data,
     });
 
   } catch (e) {
     console.error("❌ Create user error:", e);
-    res.status(500).json({ message: "Error creating user" });
+    res.status(500).json({ message: "Error creating user", error: e.message });
   }
 };
 
@@ -66,10 +83,18 @@ exports.create = async (req, res) => {
 // =========================
 exports.update = async (req, res) => {
   try {
-    await db.collection("users").doc(req.params.id).update(req.body);
-    res.json({ message: "Updated" });
+    const { data, error } = await supabase
+      .from("users")
+      .update(req.body)
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json({ message: "Updated", ...data });
   } catch (e) {
-    res.status(500).json({ message: "Error" });
+    console.error("Error updating user:", e);
+    res.status(500).json({ message: "Error", error: e.message });
   }
 };
 
@@ -78,9 +103,15 @@ exports.update = async (req, res) => {
 // =========================
 exports.delete = async (req, res) => {
   try {
-    await db.collection("users").doc(req.params.id).delete();
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", req.params.id);
+    
+    if (error) throw error;
     res.json({ message: "Deleted" });
   } catch (e) {
-    res.status(500).json({ message: "Error" });
+    console.error("Error deleting user:", e);
+    res.status(500).json({ message: "Error", error: e.message });
   }
 };

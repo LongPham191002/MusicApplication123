@@ -1,36 +1,79 @@
-const { db } = require("../config/firebase");
+const supabase = require("../config/supabase");
 
 exports.getAll = async (req, res) => {
   try {
-    const snap = await db.collection("albums").get();
-    res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+    const { data, error } = await supabase
+      .from("albums")
+      .select("*");
+    
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) {
+    console.error("Error fetching albums:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };
 
 exports.getById = async (req, res) => {
   try {
-    const doc = await db.collection("albums").doc(req.params.id).get();
-    res.json({ id: doc.id, ...doc.data() });
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+    const { data, error } = await supabase
+      .from("albums")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (e) {
+    console.error("Error fetching album:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };
 
 exports.create = async (req, res) => {
   try {
-    const doc = await db.collection("albums").add(req.body);
-    res.json({ message: "Created", id: doc.id });
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+    const { data, error } = await supabase
+      .from("albums")
+      .insert(req.body)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json({ message: "Created", id: data.id, ...data });
+  } catch (e) {
+    console.error("Error creating album:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };
 
 exports.update = async (req, res) => {
   try {
-    await db.collection("albums").doc(req.params.id).update(req.body);
-    res.json({ message: "Updated" });
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+    const { data, error } = await supabase
+      .from("albums")
+      .update(req.body)
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    res.json({ message: "Updated", ...data });
+  } catch (e) {
+    console.error("Error updating album:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };
 
 exports.delete = async (req, res) => {
   try {
-    await db.collection("albums").doc(req.params.id).delete();
+    const { error } = await supabase
+      .from("albums")
+      .delete()
+      .eq("id", req.params.id);
+    
+    if (error) throw error;
     res.json({ message: "Deleted" });
-  } catch (e) { res.status(500).json({ message: "Error" }) }
+  } catch (e) {
+    console.error("Error deleting album:", e);
+    res.status(500).json({ message: "Error", error: e.message });
+  }
 };

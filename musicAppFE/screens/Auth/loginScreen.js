@@ -13,8 +13,7 @@ import {
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
-import { auth } from "../../firebaseConfig";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import supabase from "../../supabaseClient";
 
 const bgImage = require("../../assets/image/bgrLogin.jpg");
 
@@ -84,21 +83,28 @@ const LoginScreen = ({ onNavigateToRegister, onLoginSuccess }) => {
 
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          Alert.alert("Lỗi", "Email hoặc mật khẩu không đúng");
+        } else if (error.message.includes("Email not confirmed")) {
+          Alert.alert("Lỗi", "Vui lòng xác nhận email của bạn");
+        } else {
+          Alert.alert("Lỗi", error.message || "Đăng nhập thất bại");
+        }
+        return;
+      }
 
       Alert.alert("Thành công", "Đăng nhập thành công!");
       onLoginSuccess && onLoginSuccess();
 
     } catch (error) {
-      if (error.code === "auth/user-not-found") {
-        Alert.alert("Lỗi", "Không tìm thấy tài khoản");
-      } else if (error.code === "auth/wrong-password") {
-        Alert.alert("Lỗi", "Sai mật khẩu");
-      } else if (error.code === "auth/invalid-email") {
-        Alert.alert("Lỗi", "Email không hợp lệ");
-      } else {
-        Alert.alert("Lỗi", "Đăng nhập thất bại");
-      }
+      Alert.alert("Lỗi", error.message || "Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }

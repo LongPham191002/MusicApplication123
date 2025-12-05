@@ -13,7 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { fetchSongs, setSearchQuery } from "../../redux/slice/songSlice";
 import { fetchAlbums } from "../../redux/slice/albumSlice";
-import { auth } from "../../firebaseConfig";
+import supabase from "../../supabaseClient";
 
 import SearchIcon from "../../assets/icons/search.svg";
 import PlayIcon from "../../assets/icons/play.svg";
@@ -31,13 +31,17 @@ const HomeScreen = ({ onNavigateToList, onSongPress, onNavigateToSearch }) => {
 
   const [displayName, setDisplayName] = useState("Vini");
 
-  // Lấy tên hiển thị từ Firebase Auth
+  // Lấy tên hiển thị từ Supabase Auth
   useEffect(() => {
-    const current = auth.currentUser;
-    if (current?.displayName) {
-      // Lấy đầy đủ tên người dùng đã nhập khi đăng ký
-      setDisplayName(current.displayName);
-    }
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.display_name) {
+        setDisplayName(user.user_metadata.display_name);
+      } else if (user?.email) {
+        setDisplayName(user.email.split("@")[0]);
+      }
+    };
+    getUser();
   }, []);
 
   // LOAD SONGS VÀ ALBUMS KHI VÀO TRANG

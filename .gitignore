@@ -4,6 +4,10 @@ Backend_API/firebase-key.json
 *.json.key
 firebase-key.json
 
+# Supabase Configuration - KHÔNG PUSH LÊN GITHUB (chứa keys thật)
+Backend_API/config/supabaseConfig.js
+musicAppFE/config/supabaseConfig.js
+
 # Environment variables
 .env
 .env.local

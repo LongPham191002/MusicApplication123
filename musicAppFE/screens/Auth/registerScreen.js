@@ -13,13 +13,8 @@ import {
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
-
-import { auth } from "../../firebaseConfig";
+import supabase from "../../supabaseClient";
 import { API_BASE_URL } from "../../config/apiConfig";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from "firebase/auth";
 
 const bgImage = require("../../assets/image/bgrLogin.jpg");
 
@@ -97,47 +92,59 @@ const RegisterScreen = ({ onNavigateToLogin, onRegisterSuccess }) => {
     try {
       setLoading(true);
 
-      // 1) Tạo user trên Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
-
-      // 2) Update tên hiển thị
-      await updateProfile(user, { displayName: name });
-
-      // 3) Lấy ID Token
-      const idToken = await user.getIdToken(true);
-
-      // 4) Gửi qua backend để lưu Firestore
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
+      // 1) Tạo user trên Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            display_name: name,
+          },
         },
-        body: JSON.stringify({
-          userId: user.uid,
-          displayName: name,
-          email: email,
-          avatarUrl: "",
-          likedSongs: [],
-          playlists: [],
-          createdAt: new Date().toISOString(),
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Không thể lưu user vào server");
+      if (authError) {
+        throw new Error(authError.message);
+      }
+
+      const user = authData.user;
+      if (!user) {
+        throw new Error("Không thể tạo tài khoản");
+      }
+
+      // 2) Lấy access token từ session
+      const session = authData.session;
+      const accessToken = session?.access_token;
+
+      // 3) Gửi qua backend để lưu vào database
+      if (accessToken) {
+        const response = await fetch(`${API_BASE_URL}/api/users`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            displayName: name,
+            email: email,
+            avatarUrl: "",
+            likedSongs: [],
+            playlists: [],
+            createdAt: new Date().toISOString(),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Không thể lưu user vào server");
+        }
       }
 
       Alert.alert("Thành công", "Tạo tài khoản thành công!");
       onRegisterSuccess && onRegisterSuccess();
 
     } catch (error) {
-      Alert.alert("Lỗi", error.message);
+      Alert.alert("Lỗi", error.message || "Đăng ký thất bại");
     } finally {
       setLoading(false);
     }
